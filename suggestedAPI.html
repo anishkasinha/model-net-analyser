@@ -459,8 +459,13 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:8000';
+        const API_BASE_URL = 'http://192.168.50.140:8000';
         let batchData = null;
+
+        // Helper function to construct API URLs properly
+        function apiUrl(endpoint) {
+            return `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+        }
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -490,7 +495,7 @@
 
         async function checkApiStatus() {
             try {
-                const response = await fetch(`${API_BASE_URL}/health`);
+                const response = await fetch(apiUrl('/health'));
                 const data = await response.json();
                 
                 const statusIndicator = document.getElementById('status-indicator');
@@ -506,7 +511,7 @@
 
         async function loadModelInfo() {
             try {
-                const response = await fetch(`${API_BASE_URL}/model_info`);
+                const response = await fetch(apiUrl('/model_info'));
                 const data = await response.json();
                 
                 const modelInfoContent = document.getElementById('model-info-content');
@@ -623,7 +628,7 @@
 
             try {
                 const formData = collectFormData();
-                const response = await fetch(`${API_BASE_URL}/predict`, {
+                const response = await fetch(apiUrl('/predict'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -747,7 +752,7 @@
                 for (let i = 0; i < batchData.length; i += chunkSize) {
                     const chunk = batchData.slice(i, i + chunkSize);
                     
-                    const response = await fetch(`${API_BASE_URL}/predict_batch`, {
+                    const response = await fetch(apiUrl('/predict_batch'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
