@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Intrusion Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online {
+            background-color: #4CAF50;
+        }
+
+        .status-offline {
+            background-color: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.normal {
+            background: linear-gradient(135deg, #d5f4e6 0%, #c8e6c9 100%);
+            border-left: 5px solid #4CAF50;
+        }
+
+        .result.attack {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-left: 5px solid #e74c3c;
+        }
+
+        .result.error {
+            background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+            border-left: 5px solid #e84393;
+            color: white;
+        }
+
+        .probability-bars {
+            margin-top: 15px;
+        }
+
+        .probability-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .probability-label {
+            width: 80px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .probability-bar {
+            flex: 1;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .probability-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .normal-bar {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        }
+
+        .attack-bar {
+            background: linear-gradient(90deg, #f44336, #ff9800);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #3498db;
+        }
+
+        .file-upload.dragover {
+            border-color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .batch-results {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .batch-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .batch-item.normal {
+            background-color: #e8f5e8;
+            border-left-color: #4CAF50;
+        }
+
+        .batch-item.attack {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Network Intrusion Detection System</h1>
+            <p><span id="status-indicator" class="status-indicator status-offline"></span>AI-Powered Cybersecurity Analysis</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Network Traffic Analysis Dashboard
+            </div>
+            <div class="card-body">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('single')">Single Prediction</button>
+                    <button class="tab" onclick="switchTab('batch')">Batch Analysis</button>
+                    <button class="tab" onclick="switchTab('model-info')">Model Info</button>
+                </div>
+
+                <!-- Single Prediction Tab -->
+                <div id="single-tab" class="tab-content active">
+                    <form id="prediction-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="dur">Duration (seconds)</label>
+                                <input type="number" id="dur" step="any" value="0.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="proto">Protocol</label>
+                                <select id="proto">
+                                    <option value="tcp">TCP</option>
+                                    <option value="udp">UDP</option>
+                                    <option value="icmp">ICMP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="service">Service</label>
+                                <select id="service">
+                                    <option value="http">HTTP</option>
+                                    <option value="https">HTTPS</option>
+                                    <option value="ftp">FTP</option>
+                                    <option value="ssh">SSH</option>
+                                    <option value="dns">DNS</option>
+                                    <option value="smtp">SMTP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">Connection State</label>
+                                <select id="state">
+                                    <option value="FIN">FIN</option>
+                                    <option value="CON">CON</option>
+                                    <option value="REQ">REQ</option>
+                                    <option value="RST">RST</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="spkts">Source Packets</label>
+                                <input type="number" id="spkts" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="dpkts">Destination Packets</label>
+                                <input type="number" id="dpkts" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="sbytes">Source Bytes</label>
+                                <input type="number" id="sbytes" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="dbytes">Destination Bytes</label>
+                                <input type="number" id="dbytes" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="rate">Rate</label>
+                                <input type="number" id="rate" step="any" value="0.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="sttl">Source TTL</label>
+                                <input type="number" id="sttl" value="64">
+                            </div>
+                            <div class="form-group">
+                                <label for="dttl">Destination TTL</label>
+                                <input type="number" id="dttl" value="64">
+                            </div>
+                            <div class="form-group">
+                                <label for="sload">Source Load</label>
+                                <input type="number" id="sload" step="any" value="0.0">
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset Form</button>
+                            <button type="button" class="btn btn-secondary" onclick="loadSampleData()">Load Sample</button>
+                            <button type="submit" class="btn btn-primary">Analyze Traffic 🔍</button>
+                        </div>
+                    </form>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing network traffic...</p>
+                    </div>
+
+                    <div class="result" id="result">
+                        <h3 id="result-title"></h3>
+                        <p id="result-description"></p>
+                        <div class="probability-bars" id="probability-bars"></div>
+                    </div>
+                </div>
+
+                <!-- Batch Analysis Tab -->
+                <div id="batch-tab" class="tab-content">
+                    <div class="file-upload" id="file-upload">
+                        <p>📁 Drop CSV file here or click to upload</p>
+                        <input type="file" id="csv-file" accept=".csv" style="display: none;">
+                        <button type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Choose File</button>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button type="button" class="btn btn-primary" id="analyze-batch" onclick="analyzeBatch()" disabled>Analyze Batch 📊</button>
+                    </div>
+
+                    <div class="loading" id="batch-loading">
+                        <div class="spinner"></div>
+                        <p>Processing batch analysis...</p>
+                    </div>
+
+                    <div id="batch-results" class="batch-results"></div>
+                </div>
+
+                <!-- Model Info Tab -->
+                <div id="model-info-tab" class="tab-content">
+                    <div id="model-info-content">
+                        <p>Loading model information...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let batchData = null;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiStatus();
+            loadModelInfo();
+            setupFileUpload();
+            setupForm();
+        });
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                const statusIndicator = document.getElementById('status-indicator');
+                if (response.ok && data.model_status === 'loaded') {
+                    statusIndicator.className = 'status-indicator status-online';
+                } else {
+                    statusIndicator.className = 'status-indicator status-offline';
+                }
+            } catch (error) {
+                document.getElementById('status-indicator').className = 'status-indicator status-offline';
+            }
+        }
+
+        async function loadModelInfo() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/model_info`);
+                const data = await response.json();
+                
+                const modelInfoContent = document.getElementById('model-info-content');
+                if (response.ok) {
+                    modelInfoContent.innerHTML = `
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                            <h3>🤖 Model Information</h3>
+                            <div style="margin-top: 15px;">
+                                <p><strong>Model Type:</strong> ${data.model_type}</p>
+                                <p><strong>Classifier:</strong> ${data.classifier_type}</p>
+                                <p><strong>Pipeline Steps:</strong> ${data.pipeline_steps.join(', ')}</p>
+                                <p><strong>Probability Support:</strong> ${data.has_predict_proba ? '✅ Yes' : '❌ No'}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    modelInfoContent.innerHTML = `
+                        <div style="background: #ffebee; padding: 20px; border-radius: 10px; color: #c62828;">
+                            <h3>❌ Model Information Unavailable</h3>
+                            <p>${data.error || 'Could not load model information'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('model-info-content').innerHTML = `
+                    <div style="background: #ffebee; padding: 20px; border-radius: 10px; color: #c62828;">
+                        <h3>❌ Connection Error</h3>
+                        <p>Could not connect to the API server</p>
+                    </div>
+                `;
+            }
+        }
+
+        function setupForm() {
+            document.getElementById('prediction-form').addEventListener('submit', handlePrediction);
+        }
+
+        function setupFileUpload() {
+            const fileUpload = document.getElementById('file-upload');
+            const fileInput = document.getElementById('csv-file');
+
+            fileUpload.addEventListener('click', () => fileInput.click());
+            fileUpload.addEventListener('dragover', handleDragOver);
+            fileUpload.addEventListener('drop', handleDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('file-upload').classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('file-upload').classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvText = e.target.result;
+                    // Parse CSV (simple parsing for demo)
+                    const lines = csvText.split('\n');
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    
+                    batchData = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        if (lines[i].trim()) {
+                            const values = lines[i].split(',');
+                            const row = {};
+                            headers.forEach((header, index) => {
+                                row[header] = values[index] ? values[index].trim() : '';
+                            });
+                            batchData.push(row);
+                        }
+                    }
+
+                    document.getElementById('file-upload').innerHTML = `
+                        <p>✅ File uploaded successfully</p>
+                        <p><strong>${file.name}</strong> - ${batchData.length} records</p>
+                    `;
+                    document.getElementById('analyze-batch').disabled = false;
+                } catch (error) {
+                    alert('Error parsing CSV file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function handlePrediction(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                const formData = collectFormData();
+                const response = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    displayError(data.detail || 'Prediction failed');
+                }
+            } catch (error) {
+                displayError('Connection error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function collectFormData() {
+            const formData = {};
+            const inputs = document.querySelectorAll('#prediction-form input, #prediction-form select');
+            
+            inputs.forEach(input => {
+                const value = input.value;
+                if (input.type === 'number') {
+                    formData[input.id] = parseFloat(value) || 0;
+                } else {
+                    formData[input.id] = value;
+                }
+            });
+
+            // Add remaining fields with default values
+            const defaultFields = {
+                dload: 0.0, sloss: 0, dloss: 0, sinpkt: 0.0, dinpkt: 0.0,
+                sjit: 0.0, djit: 0.0, swin: 0, stcpb: 0, dtcpb: 0, dwin: 0,
+                tcprtt: 0.0, synack: 0.0, ackdat: 0.0, smean: 0.0, dmean: 0.0,
+                trans_depth: 0, response_body_len: 0, ct_srv_src: 0, ct_state_ttl: 0,
+                ct_dst_ltm: 0, ct_src_dport_ltm: 0, ct_dst_sport_ltm: 0,
+                ct_dst_src_ltm: 0, is_ftp_login: 0, ct_ftp_cmd: 0,
+                ct_flw_http_mthd: 0, ct_src_ltm: 0, ct_srv_dst: 0, is_sm_ips_ports: 0
+            };
+
+            Object.keys(defaultFields).forEach(key => {
+                if (!(key in formData)) {
+                    formData[key] = defaultFields[key];
+                }
+            });
+
+            return formData;
+        }
+
+        function displayResult(data) {
+            const result = document.getElementById('result');
+            const title = document.getElementById('result-title');
+            const description = document.getElementById('result-description');
+            const probabilityBars = document.getElementById('probability-bars');
+
+            result.className = `result ${data.prediction_label.toLowerCase()}`;
+            
+            if (data.prediction_label === 'Normal') {
+                title.innerHTML = '✅ Normal Traffic Detected';
+                description.innerHTML = `This network traffic appears to be legitimate with ${(data.confidence * 100).toFixed(1)}% confidence.`;
+            } else {
+                title.innerHTML = '🚨 Potential Intrusion Detected';
+                description.innerHTML = `This traffic shows signs of malicious activity with ${(data.confidence * 100).toFixed(1)}% confidence. Immediate investigation recommended.`;
+            }
+
+            // Display probability bars
+            probabilityBars.innerHTML = '';
+            Object.entries(data.probabilities).forEach(([label, prob]) => {
+                const item = document.createElement('div');
+                item.className = 'probability-item';
+                
+                const isNormal = label === '0' || label.toLowerCase().includes('normal');
+                const displayLabel = isNormal ? 'Normal' : 'Attack';
+                const barClass = isNormal ? 'normal-bar' : 'attack-bar';
+                
+                item.innerHTML = `
+                    <div class="probability-label">${displayLabel}:</div>
+                    <div class="probability-bar">
+                        <div class="probability-fill ${barClass}" style="width: ${prob * 100}%"></div>
+                    </div>
+                    <div style="font-weight: bold;">${(prob * 100).toFixed(1)}%</div>
+                `;
+                probabilityBars.appendChild(item);
+            });
+
+            result.style.display = 'block';
+        }
+
+        function displayError(message) {
+            const result = document.getElementById('result');
+            result.className = 'result error';
+            result.innerHTML = `
+                <h3>❌ Analysis Failed</h3>
+                <p>${message}</p>
+            `;
+            result.style.display = 'block';
+        }
+
+        async function analyzeBatch() {
+            if (!batchData || batchData.length === 0) {
+                alert('Please upload a CSV file first');
+                return;
+            }
+
+            const batchLoading = document.getElementById('batch-loading');
+            const batchResults = document.getElementById('batch-results');
+            
+            batchLoading.style.display = 'block';
+            batchResults.innerHTML = '';
+
+            try {
+                // Process in chunks of 100
+                const chunkSize = 100;
+                let allResults = [];
+                
+                for (let i = 0; i < batchData.length; i += chunkSize) {
+                    const chunk = batchData.slice(i, i + chunkSize);
+                    
+                    const response = await fetch(`${API_BASE_URL}/predict_batch`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(chunk)
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        allResults = allResults.concat(data.predictions);
+                    } else {
+                        throw new Error(data.detail || 'Batch prediction failed');
+                    }
+                }
+
+                displayBatchResults(allResults);
+            } catch (error) {
+                batchResults.innerHTML = `
+                    <div class="result error" style="display: block;">
+                        <h3>❌ Batch Analysis Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                batchLoading.style.display = 'none';
+            }
+        }
+
+        function displayBatchResults(results) {
+            const batchResults = document.getElementById('batch-results');
+            
+            const attackCount = results.filter(r => r.prediction_label === 'Attack').length;
+            const normalCount = results.length - attackCount;
+            
+            let html = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>📊 Batch Analysis Summary</h3>
+                    <p><strong>Total Records:</strong> ${results.length}</p>
+                    <p><strong>Normal Traffic:</strong> ${normalCount} (${(normalCount/results.length*100).toFixed(1)}%)</p>
+                    <p><strong>Potential Attacks:</strong> ${attackCount} (${(attackCount/results.length*100).toFixed(1)}%)</p>
+                </div>
+            `;
+
+            results.forEach((result, index) => {
+                const isAttack = result.prediction_label === 'Attack';
+                html += `
+                    <div class="batch-item ${isAttack ? 'attack' : 'normal'}">
+                        <strong>Record ${index + 1}:</strong> 
+                        ${isAttack ? '🚨' : '✅'} ${result.prediction_label} 
+                        (Confidence: ${(result.confidence * 100).toFixed(1)}%)
+                    </div>
+                `;
+            });
+
+            batchResults.innerHTML = html;
+        }
+
+        function resetForm() {
+            document.getElementById('prediction-form').reset();
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function loadSampleData() {
+            // Load sample suspicious traffic data
+            document.getElementById('dur').value = '0.121';
+            document.getElementById('spkts').value = '8';
+            document.getElementById('dpkts').value = '0';
+            document.getElementById('sbytes').value = '496';
+            document.getElementById('dbytes').value = '0';
+            document.getElementById('rate').value = '66.115';
+            document.getElementById('sload').value = '4099.173';
+            
+            alert('Sample suspicious traffic data loaded!');
+        }
+    </script>
+</body>
+</html>
